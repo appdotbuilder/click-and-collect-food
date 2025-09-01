@@ -1,23 +1,37 @@
+import { db } from '../db';
+import { dishesTable } from '../db/schema';
 import { type CreateDishInput, type Dish } from '../schema';
 
-export async function createDish(input: CreateDishInput): Promise<Dish> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new dish with all its properties and persisting it in the database.
-    // Should validate allergens and tags arrays, and handle photo URL validation.
-    return Promise.resolve({
-        id: 0, // Placeholder ID
+export const createDish = async (input: CreateDishInput): Promise<Dish> => {
+  try {
+    // Insert dish record
+    const result = await db.insert(dishesTable)
+      .values({
         name: input.name,
-        description: input.description || null,
-        price: input.price,
-        ingredients: input.ingredients || null,
-        allergens: input.allergens,
-        photo_url: input.photo_url || null,
+        description: input.description,
+        price: input.price.toString(), // Convert number to string for numeric column
+        ingredients: input.ingredients,
+        allergens: input.allergens, // JSON column - array of strings
+        photo_url: input.photo_url,
         status: input.status,
-        tags: input.tags,
-        preparation_time_minutes: input.preparation_time_minutes,
-        stock_quantity: input.stock_quantity || null,
-        stock_threshold: input.stock_threshold || null,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as Dish);
-}
+        tags: input.tags, // JSON column - array of strings
+        preparation_time_minutes: input.preparation_time_minutes, // Integer column - no conversion needed
+        stock_quantity: input.stock_quantity,
+        stock_threshold: input.stock_threshold
+      })
+      .returning()
+      .execute();
+
+    // Convert numeric fields back to numbers before returning
+    const dish = result[0];
+    return {
+      ...dish,
+      price: parseFloat(dish.price), // Convert string back to number
+      allergens: dish.allergens as any, // Type assertion for enum arrays
+      tags: dish.tags as any // Type assertion for enum arrays
+    };
+  } catch (error) {
+    console.error('Dish creation failed:', error);
+    throw error;
+  }
+};

@@ -1,9 +1,27 @@
+import { db } from '../db';
+import { businessSettingsTable } from '../db/schema';
 import { type BusinessSettings } from '../schema';
+import { eq } from 'drizzle-orm';
 
-export async function getBusinessSettings(key?: string): Promise<BusinessSettings[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching business configuration settings.
-    // If key is provided, returns specific setting; otherwise returns all settings.
-    // Used for configuring tax rates, preparation times, capacity limits, etc.
-    return [];
-}
+export const getBusinessSettings = async (key?: string): Promise<BusinessSettings[]> => {
+  try {
+    // Build query conditionally
+    if (key) {
+      const results = await db.select()
+        .from(businessSettingsTable)
+        .where(eq(businessSettingsTable.key, key))
+        .execute();
+      
+      return results;
+    } else {
+      const results = await db.select()
+        .from(businessSettingsTable)
+        .execute();
+      
+      return results;
+    }
+  } catch (error) {
+    console.error('Business settings retrieval failed:', error);
+    throw error;
+  }
+};
